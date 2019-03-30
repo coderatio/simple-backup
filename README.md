@@ -4,12 +4,12 @@ A simple mysql database backup library for php. This library helps you backup yo
 The library also allows you import or restore a database without stress. Follow the instructions below to get started.
 
 ## Installation
-### Method 1 (Without composer)
+### Method 1 (Without internet)
 Clone or download this repository to your machine, open your terminal and run the command below:
 ```vim
 composer dump-autoload
 ```
-### Method 2 (With composer)
+### Method 2 (With internet)
 Open your terminal or command prompt and type the below command:
 ```vim
 composer require coderatio/simple-backup
