@@ -1,0 +1,24 @@
+{
+    "name": "coderatio/simple-backup",
+    "description": "A simple mysql database backup library for php.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Coderatio",
+            "email": "josiahoyahaya@gmail.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "src"
+        ],
+        "psr-4": {
+            "Coderatio\\SimpleBackup\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.6"
+    }
+}
