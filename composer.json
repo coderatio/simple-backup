@@ -3,12 +3,10 @@
     "description": "A simple mysql database backup library for php.",
     "type": "library",
     "license": "MIT",
-    "authors": [
-        {
-            "name": "Coderatio",
-            "email": "josiahoyahaya@gmail.com"
-        }
-    ],
+    "authors": [{
+        "name": "Coderatio",
+        "email": "josiahoyahaya@gmail.com"
+    }],
     "autoload": {
         "classmap": [
             "src"
@@ -20,5 +18,8 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "7"
     }
 }
