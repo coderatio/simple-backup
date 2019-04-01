@@ -53,6 +53,30 @@ $simpleBackup = SimpleBackup::setDatabase(['db_name', 'db_user', 'db_password', 
 ```
 If $file_name isn't provided, a random name will be generated for the download.
 
+#### Adding where clauses to tables
+To add where clauses as you would do on SQL, you can do this:
+```php
+$simpleBackup->setTableConditions(array $tables);
+```
+<b>Note:</b> `$tables` variable must be an associative array e.g
+```php
+$tables = [
+  users => 'is_active = true'
+];
+```
+#### Setting rows limit on tables
+To limit how many rows to be included in your backup for a table, do this:
+```php
+$simpleBackup->setTableLimitsOn(array $tables);
+```
+<b>Note:</b> Just like adding where clauses, the `$table` variable here must be an associative array. e.g
+```php
+$tables = [
+  'users' => 50,
+  'posts' => 50
+]
+```
+
 ## Importing
 This package makes importing or restoring your mysql database easy. To import your database, to this:
 ```php
