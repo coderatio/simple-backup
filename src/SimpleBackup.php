@@ -21,6 +21,16 @@ class SimpleBackup
     /** @var array $config */
     protected $config = [];
 
+    protected $provider;
+
+    protected $condition_tables = false;
+
+    protected $tables_to_set_conditions = [];
+
+    protected $set_table_limits = false;
+
+    protected $tables_to_set_limits = [];
+
     /** @var mixed $connection */
     protected $connection;
 
@@ -73,6 +83,11 @@ class SimpleBackup
         return $this;
     }
 
+    public function getProvider()
+    {
+        return $this->provider;
+    }
+
     /**
      * Get the database tables
      * @return array
@@ -114,7 +129,17 @@ class SimpleBackup
      */
     protected function prepareExportContentsFrom($file_path)
     {
-        Provider::init($this->config)->start($file_path);
+        $this->provider = Provider::init($this->config);
+
+        if ($this->condition_tables && !empty($this->tables_to_set_conditions)) {
+            $this->provider->setTableWheres($this->tables_to_set_conditions);
+        }
+
+        if ($this->set_table_limits && !empty($this->tables_to_set_limits)) {
+            $this->provider->setTableLimits($this->tables_to_set_limits);
+        }
+
+        $this->provider->start($file_path);
 
         $header = Configurator::insertDumpHeader(
             $this->connection,
@@ -125,7 +150,7 @@ class SimpleBackup
 
         $this->contents = str_replace('-- mysqldump-php https://github.com/ifsnop/mysqldump-php', $header, $this->contents);
 
-        $this->contents = str_replace('-- Server version 	5.7.24', '', $this->contents);
+        $this->contents = str_replace('-- Server version 	' . mysqli_get_server_info($this->connection), '', $this->contents);
 
         return $this;
     }
@@ -298,6 +323,22 @@ class SimpleBackup
         if ($callback !== null && is_callable($callback)) {
             $callback($this);
         }
+
+        return $this;
+    }
+
+    public function setTableConditions($tables = [])
+    {
+        $this->tables_to_set_conditions = $tables;
+        $this->condition_tables = true;
+
+        return $this;
+    }
+
+    public function setTableLimitsOn($tables = [])
+    {
+        $this->set_table_limits = true;
+        $this->tables_to_set_limits = $tables;
 
         return $this;
     }
