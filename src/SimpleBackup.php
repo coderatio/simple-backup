@@ -59,7 +59,7 @@ class SimpleBackup
      *
      * @return SimpleBackup
      */
-    public static function instance()
+    public static function start()
     {
         return new self();
     }
@@ -77,6 +77,34 @@ class SimpleBackup
         $self->parseConfig($config);
 
         return $self;
+    }
+
+    public function setDbHost($host)
+    {
+        $this->config['db_host'] = $host;
+
+        return $this;
+    }
+
+    public function setDbName($db_name)
+    {
+        $this->config['db_name'] = $db_name;
+
+        return $this;
+    }
+
+    public function setDbUser($db_user)
+    {
+        $this->config['db_user'] = $db_user;
+
+        return $this;
+    }
+
+    public function setDbPassword($db_password)
+    {
+        $this->config['db_password'] = $db_password;
+
+        return $this;
     }
 
     /**
@@ -202,6 +230,7 @@ class SimpleBackup
             $templine = '';    // Temporary variable, used to store current query
 
             $error_message = '';
+            $error_status = true;
 
             // Loop through each line
             foreach ($allLines as $line) {
@@ -213,7 +242,7 @@ class SimpleBackup
                     // If it has a semicolon at the end, it's the end of the query
                     if (substr(trim($line), -1, 1) == ';') {
                         if (!$mysqli->query($templine)) {
-                            $this->response['status'] = false;
+                            $this->response['status'] = true;
                             $error_message .= "<strong>Error performing query</strong>: {$templine} {$mysqli->error} <br/><br/>";
                         }
 
@@ -222,17 +251,19 @@ class SimpleBackup
                     }
                 }
             }
-
-            $this->response['message'] = $error_message;
-
-            if ($this->response['status'] === true) {
-                $this->response['message'] = 'Importing finished successfully';
-            }
         } catch (\Exception $e) {
+            $error_status = false;
+
             $this->response = [
                 'status' => false,
                 'message' => $e->getMessage()
             ];
+        }
+
+        $this->response['message'] = $error_message;
+
+        if ($error_status === true) {
+            $this->response['message'] = 'Importing finished successfully';
         }
 
         return $this;

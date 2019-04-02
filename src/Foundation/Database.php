@@ -12,8 +12,10 @@ final class Database
     {
         $self = new self();
 
+        $config['db_host'] = !isset($config['db_host']) ? 'localhost' : $config['db_host'];
+
         $self->connection = new mysqli(
-            $config['host'],
+            $config['db_host'],
             $config['db_user'],
             $config['db_password'],
             $config['db_name']

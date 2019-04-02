@@ -5,7 +5,7 @@ namespace Coderatio\SimpleBackup\Foundation;
 final class Configurator
 {
     protected $config = [
-        'host' => 'localhost',
+        'db_host' => 'localhost',
         'db_name' => '',
         'db_user' => '',
         'insert_chunk' => 100,
@@ -24,7 +24,7 @@ final class Configurator
             $this->config['db_name'] = $config[0];
             $this->config['db_user'] = $config[1];
             $this->config['db_password'] = $config[2];
-            $this->config['host'] = isset($config[3]) ? $config[3] : $this->config['host'];
+            $this->config['db_host'] = isset($config[3]) ? $config[3] : $this->config['db_host'];
             $this->config['insert_chunk'] = isset($config[4]) ? $config[4] : $this->config['insert_chunk'];
         }
 
