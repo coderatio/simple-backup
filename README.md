@@ -31,6 +31,9 @@ echo $simpleBackup->getExportedName();
 ```
 You can also get the reponse by doing this:
 ```php
+/**
+* @return object
+**/
 var_dump($simpleBackup->getResponse());
 ```
 
@@ -47,8 +50,8 @@ $simpleBackup = SimpleBackup::setDatabase(['db_name', 'db_user', 'db_password', 
 ```
 If $file_name isn't provided, a random name will be generated for the download.
 
-#### Adding where clauses to tables
-To add where clauses as you would do on SQL, you can do this:
+## Adding where clauses to tables
+To add where clauses as you would do on SQL, you can do this before exporting:
 ```php
 $simpleBackup->setTableConditions(array $tables);
 ```
@@ -58,8 +61,8 @@ $tables = [
   users => 'is_active = true'
 ];
 ```
-#### Setting rows limit on tables
-To limit how many rows to be included in your backup for a table, do this:
+## Setting rows limit on tables
+To limit how many rows to be included in your backup for a table, do this before exporting:
 ```php
 $simpleBackup->setTableLimitsOn(array $tables);
 ```
@@ -82,7 +85,11 @@ use Coderatio\SimpleBackup\SimpleBackup;
 $simpleBackup = SimpleBackup::setDatabase(['db_name', 'db_user', 'db_password', 'db_host (optional)']])
     ->importFrom('pathtosql_file or sql_contents');
 
-// You can then echo the response like this.
+/**
+* You can then dump the response like this. 
+*
+* @return object
+**/
 var_dump($simpleBackup->getResponse());
 ```
 <b>Note:</b> You can provide sql statements as the parameter. You may also overwrite the database configuration by passing it as second parameter to the importFrom(). e.g `importFrom(pathtosql_file, array $db_config);`.
