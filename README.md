@@ -52,20 +52,21 @@ If $file_name isn't provided, a random name will be generated for the download.
 
 ## Adding where clauses to tables
 To add where clauses as you would do on SQL, you can do this before exporting:
-```php
-$simpleBackup->setTableConditions(array $tables);
-```
+
 <b>Note:</b> `$tables` variable must be an associative array e.g
 ```php
 $tables = [
   'users' => 'is_active = true'
 ];
 ```
+
+```php
+$simpleBackup->setTableConditions(array $tables);
+```
+
 ## Setting rows limit on tables
 To limit how many rows to be included in your backup for a table, do this before exporting:
-```php
-$simpleBackup->setTableLimitsOn(array $tables);
-```
+
 <b>Note:</b> Just like adding where clauses, the `$tables` variable here must be an associative array. e.g
 ```php
 $tables = [
@@ -73,6 +74,10 @@ $tables = [
   'posts' => 50
 ]
 ```
+```php
+$simpleBackup->setTableLimitsOn(array $tables);
+```
+
 
 ## Importing
 This package makes importing or restoring your mysql database easy. To import your database, do this:
