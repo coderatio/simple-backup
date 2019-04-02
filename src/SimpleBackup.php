@@ -144,16 +144,12 @@ class SimpleBackup
 
             $this->provider->start($file_path);
 
-            $header = Configurator::insertDumpHeader(
+            $this->contents = Configurator::insertDumpHeader(
                 $this->connection,
                 $this->config
             );
 
-            $this->contents = file_get_contents($file_path);
-
-            $this->contents = str_replace('-- mysqldump-php https://github.com/ifsnop/mysqldump-php', $header, $this->contents);
-
-            $this->contents = str_replace('-- Server version 	' . mysqli_get_server_info($this->connection), '', $this->contents);
+            $this->contents .= file_get_contents($file_path);
         } catch (\Exception $e) {
             $this->response = [
                 'status' => false,
