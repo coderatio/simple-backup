@@ -58,7 +58,7 @@ $simpleBackup->setTableConditions(array $tables);
 <b>Note:</b> `$tables` variable must be an associative array e.g
 ```php
 $tables = [
-  users => 'is_active = true'
+  'users' => 'is_active = true'
 ];
 ```
 ## Setting rows limit on tables
