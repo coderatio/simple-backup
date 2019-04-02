@@ -66,7 +66,7 @@ To limit how many rows to be included in your backup for a table, do this before
 ```php
 $simpleBackup->setTableLimitsOn(array $tables);
 ```
-<b>Note:</b> Just like adding where clauses, the `$table` variable here must be an associative array. e.g
+<b>Note:</b> Just like adding where clauses, the `$tables` variable here must be an associative array. e.g
 ```php
 $tables = [
   'users' => 50,
@@ -75,7 +75,7 @@ $tables = [
 ```
 
 ## Importing
-This package makes importing or restoring your mysql database easy. To import your database, to this:
+This package makes importing or restoring your mysql database easy. To import your database, do this:
 ```php
 require 'vendor/autoload.php';
 
