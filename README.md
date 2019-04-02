@@ -31,7 +31,7 @@ echo $simpleBackup->getExportedName();
 ```
 You can also get the reponse by doing this:
 ```php
-echo $simpleBackup->getResponse();
+var_dump($simpleBackup->getResponse());
 ```
 
 #### 2-- Download
@@ -83,7 +83,7 @@ $simpleBackup = SimpleBackup::setDatabase(['db_name', 'db_user', 'db_password', 
     ->importFrom('pathtosql_file or sql_contents');
 
 // You can then echo the response like this.
-echo $simpleBackup->getResponse();
+var_dump($simpleBackup->getResponse());
 ```
 <b>Note:</b> You can provide sql statements as the parameter. You may also overwrite the database configuration by passing it as second parameter to the importFrom(). e.g `importFrom(pathtosql_file, array $db_config);`.
 
