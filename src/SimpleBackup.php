@@ -21,14 +21,19 @@ class SimpleBackup
     /** @var array $config */
     protected $config = [];
 
+    /** @var object $provider */
     protected $provider;
 
+    /** @var boolean $condition_tables */
     protected $condition_tables = false;
 
+    /** @var array $tables_to_set_conditions */
     protected $tables_to_set_conditions = [];
 
+    /** @var boolean $set_table_limits */
     protected $set_table_limits = false;
 
+    /** @var array $tables_to_set_limits */
     protected $tables_to_set_limits = [];
 
     /** @var mixed $connection */
@@ -41,7 +46,10 @@ class SimpleBackup
     protected $export_name = '';
 
     /** @var string $response */
-    protected $response = '';
+    protected $response = [
+        'status' => true,
+        'message' => ''
+    ];
 
     /** @var bool $to_download */
     protected $to_download = false;
@@ -83,6 +91,11 @@ class SimpleBackup
         return $this;
     }
 
+    /**
+     * Get provider instance
+     *
+     * @return Provider
+     */
     public function getProvider()
     {
         return $this->provider;
@@ -109,17 +122,6 @@ class SimpleBackup
             $target_tables[] = $row[0];
         }
 
-        $this->config['tables'] = false;
-
-        if ($this->config['tables'] !== false) {
-            $target_tables = array_intersect($target_tables, $this->config['tables']);
-        }
-
-        $this->contents = Configurator::insertDumpHeader(
-            $this->connection,
-            $this->config
-        );
-
         return $target_tables;
     }
 
@@ -129,28 +131,35 @@ class SimpleBackup
      */
     protected function prepareExportContentsFrom($file_path)
     {
-        $this->provider = Provider::init($this->config);
+        try {
+            $this->provider = Provider::init($this->config);
 
-        if ($this->condition_tables && !empty($this->tables_to_set_conditions)) {
-            $this->provider->setTableWheres($this->tables_to_set_conditions);
+            if ($this->condition_tables && !empty($this->tables_to_set_conditions)) {
+                $this->provider->setTableWheres($this->tables_to_set_conditions);
+            }
+
+            if ($this->set_table_limits && !empty($this->tables_to_set_limits)) {
+                $this->provider->setTableLimits($this->tables_to_set_limits);
+            }
+
+            $this->provider->start($file_path);
+
+            $header = Configurator::insertDumpHeader(
+                $this->connection,
+                $this->config
+            );
+
+            $this->contents = file_get_contents($file_path);
+
+            $this->contents = str_replace('-- mysqldump-php https://github.com/ifsnop/mysqldump-php', $header, $this->contents);
+
+            $this->contents = str_replace('-- Server version 	' . mysqli_get_server_info($this->connection), '', $this->contents);
+        } catch (\Exception $e) {
+            $this->response = [
+                'status' => false,
+                'message' => $e->getMessage()
+            ];
         }
-
-        if ($this->set_table_limits && !empty($this->tables_to_set_limits)) {
-            $this->provider->setTableLimits($this->tables_to_set_limits);
-        }
-
-        $this->provider->start($file_path);
-
-        $header = Configurator::insertDumpHeader(
-            $this->connection,
-            $this->config
-        );
-
-        $this->contents = file_get_contents($file_path);
-
-        $this->contents = str_replace('-- mysqldump-php https://github.com/ifsnop/mysqldump-php', $header, $this->contents);
-
-        $this->contents = str_replace('-- Server version 	' . mysqli_get_server_info($this->connection), '', $this->contents);
 
         return $this;
     }
@@ -165,61 +174,70 @@ class SimpleBackup
      */
     public function importFrom($sql_file_OR_content, $config = [])
     {
-        if (!empty($config)) {
-            $this->parseConfig($config);
-        }
-
-        //exit(var_dump(Provider::init($this->config)->start('backups/dump.sql')));
-
         // Increase script loading time
         set_time_limit(3000);
 
-        $sql_contents = (strlen($sql_file_OR_content) > 300
-            ? $sql_file_OR_content
-            : file_get_contents($sql_file_OR_content));
+        try {
+            if (!empty($config)) {
+                $this->parseConfig($config);
+            }
 
-        $allLines = explode("\n", $sql_contents);
+            $sql_contents = (strlen($sql_file_OR_content) > 300
+                ? $sql_file_OR_content
+                : file_get_contents($sql_file_OR_content));
 
-        $target_tables = $this->getTargetTables();
+            $allLines = explode("\n", $sql_contents);
 
-        $mysqli = $this->connection;
+            $target_tables = $this->getTargetTables();
 
-        $mysqli->query('SET foreign_key_checks = 0');
-        preg_match_all("/\nCREATE TABLE(.*?)\`(.*?)\`/si", "\n" . $sql_contents, $target_tables);
+            $mysqli = $this->connection;
 
-        // Let's drop all tables on the database first.
-        foreach ($target_tables[2] as $table) {
-            //$this->connection->query("TRUNCATE TABLE {$table}");
-            $mysqli->query('DROP TABLE IF EXISTS ' . $table);
-        }
+            $mysqli->query('SET foreign_key_checks = 0');
+            preg_match_all("/\nCREATE TABLE(.*?)\`(.*?)\`/si", "\n" . $sql_contents, $target_tables);
 
-        $mysqli->query('SET foreign_key_checks = 0');
-        $mysqli->query("SET NAMES 'utf8'");
+            // Let's drop all tables on the database first.
+            foreach ($target_tables[2] as $table) {
+                $mysqli->query('DROP TABLE IF EXISTS ' . $table);
+            }
 
-        $templine = '';    // Temporary variable, used to store current query
+            $mysqli->query('SET foreign_key_checks = 0');
+            $mysqli->query("SET NAMES 'utf8'");
 
-        // Loop through each line
-        foreach ($allLines as $line) {
+            $templine = '';    // Temporary variable, used to store current query
 
-            // (if it is not a comment..) Add this line to the current segment
-            if ($line != '' && strpos($line, '--') !== 0) {
-                $templine .= $line;
+            $error_message = '';
 
-                // If it has a semicolon at the end, it's the end of the query
-                if (substr(trim($line), -1, 1) == ';') {
-                    if (!$mysqli->query($templine)) {
-                        print("
-                            <strong>Error performing query</strong>: {$templine} {$mysqli->error} <br/><br/>
-                        ");
+            // Loop through each line
+            foreach ($allLines as $line) {
+
+                // (if it is not a comment..) Add this line to the current segment
+                if ($line != '' && strpos($line, '--') !== 0) {
+                    $templine .= $line;
+
+                    // If it has a semicolon at the end, it's the end of the query
+                    if (substr(trim($line), -1, 1) == ';') {
+                        if (!$mysqli->query($templine)) {
+                            $this->response['status'] = false;
+                            $error_message .= "<strong>Error performing query</strong>: {$templine} {$mysqli->error} <br/><br/>";
+                        }
+
+                        // set variable to empty, to start picking up the lines after ";"
+                        $templine = '';
                     }
-
-                    // set variable to empty, to start picking up the lines after ";"
-                    $templine = '';
                 }
             }
-        }
 
-        $this->response = 'Importing finished successfully.';
+            $this->response['message'] = $error_message;
+
+            if ($this->response['status'] === true) {
+                $this->response['message'] = 'Importing finished successfully';
+            }
+        } catch (\Exception $e) {
+            $this->response = [
+                'status' => false,
+                'message' => $e->getMessage()
+            ];
+        }
 
         return $this;
     }
@@ -245,9 +263,7 @@ class SimpleBackup
 
         $this->export_name = $export_name;
 
-        $file_path = "backups/{$export_name}";
-
-        $this->prepareExportContentsFrom($file_path);
+        $this->prepareExportContentsFrom($export_name);
 
         ob_get_clean();
         header('Content-Type: application/octet-stream');
@@ -258,9 +274,9 @@ class SimpleBackup
 
         echo $this->contents;
 
-        $this->response = 'Export completed successfully';
+        $this->response['message'] = 'Export completed successfully';
 
-        @unlink($file_path);
+        @unlink($export_name);
 
         exit;
     }
@@ -275,7 +291,6 @@ class SimpleBackup
     public function storeAfterExportTo($path_to_store, $name = null)
     {
         $this->abortIfEmptyTables();
-
 
         $export_name = $this->config['db_name'] . '_db_backup_(' . date('H-i-s') . '_' . date('d-m-Y') . ').sql';
 
@@ -297,6 +312,8 @@ class SimpleBackup
         $file = fopen($file_path, 'wb') or die('Unable to open file!');
         fwrite($file, $this->contents);
         fclose($file);
+
+        $this->response['message'] = 'Export finished successfully.';
 
         return $this;
     }
@@ -327,6 +344,12 @@ class SimpleBackup
         return $this;
     }
 
+    /**
+     * Sets SQL like where clauses on tables before export
+     *
+     * @param array $tables
+     * @return $this
+     */
     public function setTableConditions($tables = [])
     {
         $this->tables_to_set_conditions = $tables;
@@ -335,6 +358,12 @@ class SimpleBackup
         return $this;
     }
 
+    /**
+     * Sets limits on tables before export
+     *
+     * @param array $tables
+     * @return $this
+     */
     public function setTableLimitsOn($tables = [])
     {
         $this->set_table_limits = true;
@@ -350,7 +379,7 @@ class SimpleBackup
      */
     public function getResponse()
     {
-        return $this->response;
+        return (object)$this->response;
     }
 
     /**
