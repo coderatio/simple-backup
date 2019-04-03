@@ -2,10 +2,11 @@
 
 namespace Coderatio\SimpleBackup;
 
-use Coderatio\SimpleBackup\Foundation\Configurator;
-use Coderatio\SimpleBackup\Foundation\Database;
 use RuntimeException;
+use Coderatio\SimpleBackup\Foundation\Database;
 use Coderatio\SimpleBackup\Foundation\Provider;
+use Coderatio\SimpleBackup\Foundation\Configurator;
+use Coderatio\SimpleBackup\Exceptions\NoTablesFoundException;
 
 /***************************************************
  * @Author: Coderatio
@@ -45,7 +46,19 @@ class SimpleBackup
     /** @var string $export_name */
     protected $export_name = '';
 
-    /** @var string $response */
+    /** @var boolean $export_only_some_tables */
+    protected $include_only_some_tables = false;
+
+    /** @var array $tables_to_export */
+    protected $tables_to_include = [];
+
+    /** @var boolean $exclude_only_some_tables */
+    protected $exclude_only_some_tables = false;
+
+    /** @var array $tables_to_exclude */
+    protected $tables_to_exclude = [];
+
+    /** @var array $response */
     protected $response = [
         'status' => true,
         'message' => ''
@@ -53,6 +66,9 @@ class SimpleBackup
 
     /** @var bool $to_download */
     protected $to_download = false;
+
+    /** @var array $tables */
+    protected $tables = [];
 
     /**
      * Get the instance of the class
@@ -150,7 +166,10 @@ class SimpleBackup
             $target_tables[] = $row[0];
         }
 
-        return $target_tables;
+        $this->tables = $target_tables;
+        $this->config['total_tables'] = count($this->tables);
+
+        return $this->tables;
     }
 
     /**
@@ -161,6 +180,14 @@ class SimpleBackup
     {
         try {
             $this->provider = Provider::init($this->config);
+
+            if($this->include_only_some_tables && !empty($this->tables_to_include)) {
+                $this->includeTables($this->tables_to_include);
+            }
+
+            if($this->exclude_only_some_tables && !empty($this->tables_to_exclude)) {
+                $this->excludeTables($this->tables_to_exclude);
+            }
 
             if ($this->condition_tables && !empty($this->tables_to_set_conditions)) {
                 $this->provider->setTableWheres($this->tables_to_set_conditions);
@@ -395,6 +422,55 @@ class SimpleBackup
     {
         $this->set_table_limits = true;
         $this->tables_to_set_limits = $tables;
+
+        return $this;
+    }
+
+    public function includeTables($tables = [])
+    {
+        $this->include_only_some_tables = true;
+
+        $this->tables_to_include = array_filter($tables, function($table) {
+            if(in_array($table, $this->getTargetTables())) {
+                return $table;
+            }
+        });
+        
+        $this->tables = $this->tables_to_include;
+
+        if(empty($this->tables_to_include)) {
+            throw new NoTablesFoundException("No tables found in to export.");
+        }
+
+        $this->config['include_tables'] = $this->tables_to_include;
+        $this->config['total_tables'] = count($this->tables);
+
+        return $this;
+    }
+
+    public function excludeTables($tables = [])
+    {
+        $this->exclude_only_some_tables = true;
+
+        $this->tables_to_exclude = array_filter($this->getTargetTables(), function($table) use ($tables) {
+            if(in_array($table, $tables)) {
+                return $table;
+            }
+        });
+
+        $this->tables = array_filter($this->tables, function($table){
+            if(!in_array($table, $this->tables_to_exclude)) {
+                return $table;
+            }
+
+        });
+
+        if(empty($this->tables)) {
+            throw new NoTablesFoundException("No tables found in to export.");
+        }
+
+        $this->config['exclude_tables'] = $this->tables_to_exclude;
+        $this->config['total_tables'] = count($this->tables);
 
         return $this;
     }

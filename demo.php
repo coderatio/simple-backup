@@ -5,10 +5,11 @@ require 'vendor/autoload.php';
 use Coderatio\SimpleBackup\SimpleBackup;
 
 $simpleBackup = SimpleBackup::start()
-    ->setDbName('db_name')
-    ->setDbUser('db_username')
-    ->setDbPassword('db_password')
-    ->then()->storeAfterExportTo('backups')
+    ->setDbName('byarent')
+    ->setDbUser('root')
+    ->setDbPassword('')
+    ->includeTables(['users', 'agents', 'houses', 'test'])
+    ->then()->storeAfterExportTo('backups', 'byarent')
     ->then()->getResponse();
 
 echo $simpleBackup->message;

@@ -214,6 +214,11 @@ class Mysqldump
         return $array1;
     }
 
+    public function getDumpSettings()
+    {
+        return $this->dumpSettings;
+    }
+
     /**
      * Keyed by table name, with the value as the conditions:
      * e.g. 'users' => 'date_registered > NOW() - INTERVAL 6 MONTH AND deleted=0'
