@@ -1,17 +1,18 @@
 <?php
 
-require 'vendor/autoload.php';
+    require 'vendor/autoload.php';
 
-use Coderatio\SimpleBackup\SimpleBackup;
+    use Coderatio\SimpleBackup\SimpleBackup;
 
-$simpleBackup = SimpleBackup::start()
-    ->setDbName('byarent')
-    ->setDbUser('root')
-    ->setDbPassword('')
-    ->includeTables(['users', 'agents', 'houses', 'test'])
-    ->then()->storeAfterExportTo('backups', 'byarent')
-    ->then()->getResponse();
 
-echo $simpleBackup->message;
+    SimpleBackup::start()
+        ->setDbName('byarent')
+        ->setDbUser('root')
+        ->setDbPassword('')
+        ->includeOnly(['carts', 'houses', 'categories'])
+        ->then()->storeAfterExportTo('backups', 'byarent')
+        ->then()->getResponse();
+
     
  
+

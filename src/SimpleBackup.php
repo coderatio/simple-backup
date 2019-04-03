@@ -182,11 +182,11 @@ class SimpleBackup
             $this->provider = Provider::init($this->config);
 
             if($this->include_only_some_tables && !empty($this->tables_to_include)) {
-                $this->includeTables($this->tables_to_include);
+                $this->includeOnly($this->tables_to_include);
             }
 
             if($this->exclude_only_some_tables && !empty($this->tables_to_exclude)) {
-                $this->excludeTables($this->tables_to_exclude);
+                $this->excludeOnly($this->tables_to_exclude);
             }
 
             if ($this->condition_tables && !empty($this->tables_to_set_conditions)) {
@@ -426,7 +426,13 @@ class SimpleBackup
         return $this;
     }
 
-    public function includeTables($tables = [])
+     /**
+     *  Include only the tables mentioned in @var $tables
+     *
+     * @param array $tables
+     * @return $this
+     */
+    public function includeOnly($tables = [])
     {
         $this->include_only_some_tables = true;
 
@@ -439,7 +445,7 @@ class SimpleBackup
         $this->tables = $this->tables_to_include;
 
         if(empty($this->tables_to_include)) {
-            throw new NoTablesFoundException("No tables found in to export.");
+            throw new NoTablesFoundException("No tables found to export.");
         }
 
         $this->config['include_tables'] = $this->tables_to_include;
@@ -448,7 +454,13 @@ class SimpleBackup
         return $this;
     }
 
-    public function excludeTables($tables = [])
+    /**
+     *  Exclude only the tables mentioned in @var $tables
+     *
+     * @param array $tables
+     * @return $this
+     */
+    public function excludeOnly($tables = [])
     {
         $this->exclude_only_some_tables = true;
 
@@ -466,7 +478,7 @@ class SimpleBackup
         });
 
         if(empty($this->tables)) {
-            throw new NoTablesFoundException("No tables found in to export.");
+            throw new NoTablesFoundException("No tables found to export.");
         }
 
         $this->config['exclude_tables'] = $this->tables_to_exclude;
@@ -474,7 +486,7 @@ class SimpleBackup
 
         return $this;
     }
-
+    
     /**
      * Get the response for each action.
      *
