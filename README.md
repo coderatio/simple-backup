@@ -1,5 +1,5 @@
 # Simple-backup
-<img src="/_docs/init.png"/><br/>
+<img src="/_docs/init.PNG"/><br/>
 A simple mysql database backup library for php. This library helps you backup your mysql database to a directory in your project or download it to your machine. 
 
 The library also allows you import or restore a database without stress. Follow the instructions below to get started.
