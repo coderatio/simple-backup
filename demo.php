@@ -5,13 +5,13 @@
     use Coderatio\SimpleBackup\SimpleBackup;
 
 
-SimpleBackup::start()
-    ->setDbName('byarent')
-    ->setDbUser('root')
-    ->setDbPassword('')
-    ->includeOnly(['carts', 'houses', 'categories'])
-    ->then()->storeAfterExportTo('backups', 'byarent')
-    ->then()->getResponse();
+    SimpleBackup::start()
+        ->setDbHost('DB_HOST') // Default is localhost
+        ->setDbName('DB_NAME')
+        ->setDbUser('DB_USERNAME')
+        ->setDbPassword('DB_PASSWORD')
+        ->then()->storeAfterExportTo('backups')
+        ->then()->getResponse();
 
     
  
