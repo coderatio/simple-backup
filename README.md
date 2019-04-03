@@ -1,4 +1,5 @@
 # Simple-backup
+<img src="/_docs/store_export.png"/>
 A simple mysql database backup library for php. This library helps you backup your mysql database to a directory in your project or download it to your machine. 
 
 The library also allows you import or restore a database without stress. Follow the instructions below to get started.
@@ -8,6 +9,35 @@ Open your terminal or command prompt and type the below command:
 ```vim
 composer require coderatio/simple-backup
 ```
+## New in version 1.0.1
+1. You can now chain static `::start()` on `SimpleBackup class. 
+2. This version includes fluent chaining of database settings.
+3. Added `->includeOnly(array $tables)` which allows you to export data for only tables mentioned in `$tables` variable.
+4. Added `->excludeOnly(array $tables)` which removes the inclussion of tables mentioned in `$tables` variable during export.
+
+#### (v1.0.1) Exporting specific tables only
+```php
+  SimpleBackup::start()
+    ->setDbName('db_name')
+    ->setDbUser('db_username')
+    ->setDbPassword('db_password')
+    ->includeOnly(['carts', 'houses', 'categories'])
+    ->then()->storeAfterExportTo('backups')
+    ->then()->getResponse();
+```
+
+#### (v1.0.1) Excluding specific tables only
+```php
+  SimpleBackup::start()
+    ->setDbName('db_name')
+    ->setDbUser('db_username')
+    ->setDbPassword('db_password')
+    ->excludeOnly(['users', 'posts'])
+    ->then()->storeAfterExportTo('backups')
+    ->then()->getResponse();
+```
+
+---
 
 ## Exporting
 The export can be done in two ways.
