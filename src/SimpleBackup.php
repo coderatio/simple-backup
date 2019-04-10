@@ -228,6 +228,9 @@ class SimpleBackup
         // Increase script loading time
         set_time_limit(3000);
 
+        $error_message = '';
+        $error_status = true;
+
         try {
             if (!empty($config)) {
                 $this->parseConfig($config);
@@ -255,9 +258,6 @@ class SimpleBackup
             $mysqli->query("SET NAMES 'utf8'");
 
             $templine = '';    // Temporary variable, used to store current query
-
-            $error_message = '';
-            $error_status = true;
 
             // Loop through each line
             foreach ($allLines as $line) {

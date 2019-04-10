@@ -1,18 +1,11 @@
 <?php
 
-    require 'vendor/autoload.php';
+require 'vendor/autoload.php';
 
-    use Coderatio\SimpleBackup\SimpleBackup;
+use Coderatio\SimpleBackup\SimpleBackup;
 
-
-    SimpleBackup::start()
-        ->setDbHost('DB_HOST') // Default is localhost
-        ->setDbName('DB_NAME')
-        ->setDbUser('DB_USERNAME')
-        ->setDbPassword('DB_PASSWORD')
-        ->then()->storeAfterExportTo('backups')
-        ->then()->getResponse();
-
-    
- 
-
+SimpleBackup::setDatabase(['test_import_db', 'root', ''])
+    ->then()->importFrom('backups/my_db.sql')
+    ->then(function ($simpleBackup) {
+        echo var_dump($simpleBackup->getResponse());
+    });
