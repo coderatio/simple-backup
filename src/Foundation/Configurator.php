@@ -8,7 +8,7 @@ final class Configurator
         'db_host' => 'localhost',
         'db_name' => '',
         'db_user' => '',
-        'insert_chunk' => 100,
+        'insert_chunk' => 200,
         'db_password' => ''
     ];
 
@@ -47,7 +47,7 @@ final class Configurator
         $generation_time = date('M d, Y ') . 'at ' . date('h:s A');
         $copyright =  'Coderatio';
 
-        $contents = "-- Simple Backup SQL Dump\r\n-- Version 1.0\r\n-- https://www.github.com/coderatio/simple-backup/\r\n--\r\n-- Host: localhost:3306\r\n-- Generation Time: {$generation_time}\r\n-- MYSQL Server Version: {$mysql_version}\r\n-- PHP Version: {$php_version}\r\n-- Developer: Josiah O. Yahaya\r\n-- Copyright: {$copyright}";
+        $contents = "-- Simple Backup SQL Dump\r\n-- Version 1.0.3\r\n-- https://www.github.com/coderatio/simple-backup/\r\n--\r\n-- Host: localhost:3306\r\n-- Generation Time: {$generation_time}\r\n-- MYSQL Server Version: {$mysql_version}\r\n-- PHP Version: {$php_version}\r\n-- Developer: Josiah O. Yahaya\r\n-- Copyright: {$copyright}";
 
         $contents .= "\r\n\r\nSET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\r\nSET AUTOCOMMIT = 0;\r\nSTART TRANSACTION;\r\nSET time_zone = \"+00:00\"\r\n\r\n--\r\n-- Database: `" . $config['db_name'] . "`\r\n-- Total Tables: {$config['total_tables']}\r\n--\r\n\r\n";
 
@@ -56,10 +56,6 @@ final class Configurator
 
     protected function isAssociativeArray($config)
     {
-        if (array_keys($config) !== range(0, count($config) - 1)) {
-            return true;
-        }
-
-        return false;
+        return array_keys($config) !== range(0, count($config) - 1);
     }
 }

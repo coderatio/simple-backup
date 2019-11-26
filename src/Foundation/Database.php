@@ -22,7 +22,7 @@ final class Database
         );
 
         if ($self->connection->connect_error) {
-            throw new RuntimeException('Failed to connect to database: ' . $self->connection->connect_error);
+            throw new \RuntimeException('Failed to connect to database: ' . $self->connection->connect_error);
         }
 
         return $self->connection;
