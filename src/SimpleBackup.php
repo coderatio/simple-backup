@@ -2,6 +2,7 @@
 
 namespace Coderatio\SimpleBackup;
 
+use Closure;
 use RuntimeException;
 use Coderatio\SimpleBackup\Foundation\Database;
 use Coderatio\SimpleBackup\Foundation\Provider;
@@ -229,7 +230,7 @@ class SimpleBackup
         set_time_limit(3000);
 
         $error_message = '';
-        $error_status = true;
+        $error_status = false;
 
         try {
             if (!empty($config)) {
@@ -279,7 +280,7 @@ class SimpleBackup
                 }
             }
         } catch (\Exception $e) {
-            $error_status = false;
+            $error_status = true;
 
             $this->response = [
                 'status' => false,
@@ -289,7 +290,7 @@ class SimpleBackup
 
         $this->response['message'] = $error_message;
 
-        if ($error_status === true) {
+        if ($error_status === false) {
             $this->response['message'] = 'Importing finished successfully';
         }
 
@@ -354,7 +355,7 @@ class SimpleBackup
 
         $this->export_name = $export_name;
 
-        if (!file_exists($path_to_store) && !mkdir($path_to_store)) {
+        if (!file_exists($path_to_store) && !mkdir($path_to_store) && !is_dir($path_to_store)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $path_to_store));
         }
 
@@ -386,12 +387,12 @@ class SimpleBackup
      * This is used to chain more methods.
      * You can pass in a function to modify any other thing.
      *
-     * @param null $callback
+     * @param Closure $callback
      * @return $this
      */
-    public function then($callback = null)
+    public function then(Closure $callback = null)
     {
-        if ($callback !== null && is_callable($callback)) {
+        if ($callback !== null) {
             $callback($this);
         }
 
@@ -426,26 +427,29 @@ class SimpleBackup
         return $this;
     }
 
-     /**
-     *  Include only the tables mentioned in @var $tables
-     *
-     * @param array $tables
+    /**
+     *  Include only the tables mentioned in @param array $tables
      * @return $this
+     * @throws NoTablesFoundException
+     * @var $tables
+     *
      */
     public function includeOnly($tables = [])
     {
         $this->include_only_some_tables = true;
 
-        $this->tables_to_include = array_filter($tables, function($table) {
-            if(in_array($table, $this->getTargetTables())) {
+        $this->tables_to_include = array_filter($tables, static function($table) {
+            if(in_array($table, $this->getTargetTables(), false)) {
                 return $table;
             }
+
+            return null;
         });
         
         $this->tables = $this->tables_to_include;
 
         if(empty($this->tables_to_include)) {
-            throw new NoTablesFoundException("No tables found to export.");
+            throw new NoTablesFoundException('No tables found to export.');
         }
 
         $this->config['include_tables'] = $this->tables_to_include;
@@ -455,30 +459,34 @@ class SimpleBackup
     }
 
     /**
-     *  Exclude only the tables mentioned in @var $tables
-     *
-     * @param array $tables
+     *  Exclude only the tables mentioned in @param array $tables
      * @return $this
+     * @throws NoTablesFoundException
+     * @var $tables
+     *
      */
     public function excludeOnly($tables = [])
     {
         $this->exclude_only_some_tables = true;
 
-        $this->tables_to_exclude = array_filter($this->getTargetTables(), function($table) use ($tables) {
-            if(in_array($table, $tables)) {
+        $this->tables_to_exclude = array_filter($this->getTargetTables(), static function($table) use ($tables) {
+            if(in_array($table, $tables, false)) {
                 return $table;
             }
+
+            return null;
         });
 
-        $this->tables = array_filter($this->tables, function($table){
-            if(!in_array($table, $this->tables_to_exclude)) {
+        $this->tables = array_filter($this->tables, static function($table){
+            if(!in_array($table, $this->tables_to_exclude, false)) {
                 return $table;
             }
 
+            return null;
         });
 
         if(empty($this->tables)) {
-            throw new NoTablesFoundException("No tables found to export.");
+            throw new NoTablesFoundException('No tables found to export.');
         }
 
         $this->config['exclude_tables'] = $this->tables_to_exclude;
