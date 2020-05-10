@@ -438,8 +438,8 @@ class SimpleBackup
     {
         $this->include_only_some_tables = true;
 
-        $this->tables_to_include = array_filter($tables, static function($table) {
-            if(in_array($table, $this->getTargetTables(), false)) {
+        $this->tables_to_include = array_filter($this->getTargetTables(), static function($table) use ($tables) {
+            if(in_array($table, $tables, false)) {
                 return $table;
             }
 
