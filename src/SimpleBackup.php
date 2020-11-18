@@ -469,7 +469,7 @@ class SimpleBackup
     {
         $this->exclude_only_some_tables = true;
 
-        $this->tables_to_exclude = array_filter($this->getTargetTables(), static function($table) use ($tables) {
+        $tables_to_exclude = $this->tables_to_exclude = array_filter($this->getTargetTables(), static function($table) use ($tables) {
             if(in_array($table, $tables, false)) {
                 return $table;
             }
@@ -477,8 +477,8 @@ class SimpleBackup
             return null;
         });
 
-        $this->tables = array_filter($this->tables, static function($table){
-            if(!in_array($table, $this->tables_to_exclude, false)) {
+        $this->tables = array_filter($this->tables, static function($table) use ($tables_to_exclude) {
+            if (!in_array($table, $tables_to_exclude, false)) {
                 return $table;
             }
 
