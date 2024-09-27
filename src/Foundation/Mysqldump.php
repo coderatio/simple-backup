@@ -134,7 +134,7 @@ class Mysqldump
             'skip-tz-utc' => false,
             'skip-comments' => false,
             'skip-dump-date' => false,
-            'skip-definer' => false,
+            'skip-definer' => true,
             'where' => '',
             /* deprecated */
             'disable-foreign-keys-check' => true
@@ -1701,8 +1701,8 @@ class TypeAdapterMysql extends TypeAdapterFactory
         $resultSet->closeCursor();
         $ret = "";
 
-        $ret .= "CREATE DATABASE /*!32312 IF NOT EXISTS*/ `${databaseName}`" .
-            " /*!40100 DEFAULT CHARACTER SET ${characterSet} " .
+        $ret .= "CREATE DATABASE /* !32312 IF NOT EXISTS*/ `${databaseName}`" .
+            " /* !40100 DEFAULT CHARACTER SET ${characterSet} " .
             " COLLATE ${collationDb} */;" . PHP_EOL . PHP_EOL .
             "USE `${databaseName}`;" . PHP_EOL . PHP_EOL;
 
@@ -1747,10 +1747,10 @@ class TypeAdapterMysql extends TypeAdapterFactory
             $createTable = preg_replace($match, $replace, $createTable);
         }
 
-        $ret = "/*!40101 SET @saved_cs_client     = @@character_set_client */;" . PHP_EOL .
-            "/*!40101 SET character_set_client = " . $this->dumpSettings['default-character-set'] . " */;" . PHP_EOL .
+        $ret = "/* !40101 SET @saved_cs_client     = @@character_set_client */;" . PHP_EOL .
+            "/* !40101 SET character_set_client = " . $this->dumpSettings['default-character-set'] . " */;" . PHP_EOL .
             $createTable . ";" . PHP_EOL .
-            "/*!40101 SET character_set_client = @saved_cs_client */;" . PHP_EOL .
+            "/* !40101 SET character_set_client = @saved_cs_client */;" . PHP_EOL .
             PHP_EOL;
         return $ret;
     }
@@ -1764,12 +1764,12 @@ class TypeAdapterMysql extends TypeAdapterFactory
 
         $viewStmt = $row['Create View'];
 
-        $definerStr = $this->dumpSettings['skip-definer'] ? '' : '/*!50013 \2 */' . PHP_EOL;
+        $definerStr = $this->dumpSettings['skip-definer'] ? '' : '/* !50013 \2 */' . PHP_EOL;
 
         if ($viewStmtReplaced = preg_replace(
             '/^(CREATE(?:\s+ALGORITHM=(?:UNDEFINED|MERGE|TEMPTABLE))?)\s+('
                 . self::DEFINER_RE . '(?:\s+SQL SECURITY DEFINER|INVOKER)?)?\s+(VIEW .+)$/',
-            '/*!50001 \1 */' . PHP_EOL . $definerStr . '/*!50001 \3 */',
+            '/* !50001 \1 */' . PHP_EOL . $definerStr . '/* !50001 \3 */',
             $viewStmt,
             1
         )) {
@@ -1788,18 +1788,19 @@ class TypeAdapterMysql extends TypeAdapterFactory
         }
 
         $triggerStmt = $row['SQL Original Statement'];
-        $definerStr = $this->dumpSettings['skip-definer'] ? '' : '/*!50017 \2*/ ';
+        $definerStr = $this->dumpSettings['skip-definer'] ? '' : '/* !50017 \2*/ ';
         if ($triggerStmtReplaced = preg_replace(
             '/^(CREATE)\s+(' . self::DEFINER_RE . ')?\s+(TRIGGER\s.*)$/s',
-            '/*!50003 \1*/ ' . $definerStr . '/*!50003 \3 */',
+            // '/* !50003 \1*/ ' . $definerStr . '/* !50003 \3 */',
+			'\1' . $definerStr . ' \3',
             $triggerStmt,
             1
         )) {
             $triggerStmt = $triggerStmtReplaced;
         }
 
-        $ret .= "DELIMITER ;;" . PHP_EOL .
-            $triggerStmt . ";;" . PHP_EOL .
+        $ret .= "DELIMITER $$" . PHP_EOL .
+            $triggerStmt . PHP_EOL . "$$" . PHP_EOL .
             "DELIMITER ;" . PHP_EOL . PHP_EOL;
         return $ret;
     }
@@ -1813,14 +1814,14 @@ class TypeAdapterMysql extends TypeAdapterFactory
         }
         $procedureStmt = $row['Create Procedure'];
 
-        $ret .= "/*!50003 DROP PROCEDURE IF EXISTS `" .
+        $ret .= "/* !50003 DROP PROCEDURE IF EXISTS `" .
             $row['Procedure'] . "` */;" . PHP_EOL .
-            "/*!40101 SET @saved_cs_client     = @@character_set_client */;" . PHP_EOL .
-            "/*!40101 SET character_set_client = " . $this->dumpSettings['default-character-set'] . " */;" . PHP_EOL .
+            "/* !40101 SET @saved_cs_client     = @@character_set_client */;" . PHP_EOL .
+            "/* !40101 SET character_set_client = " . $this->dumpSettings['default-character-set'] . " */;" . PHP_EOL .
             "DELIMITER ;;" . PHP_EOL .
             $procedureStmt . " ;;" . PHP_EOL .
             "DELIMITER ;" . PHP_EOL .
-            "/*!40101 SET character_set_client = @saved_cs_client */;" . PHP_EOL . PHP_EOL;
+            "/* !40101 SET character_set_client = @saved_cs_client */;" . PHP_EOL . PHP_EOL;
 
         return $ret;
     }
@@ -1835,40 +1836,40 @@ class TypeAdapterMysql extends TypeAdapterFactory
         $eventName = $row['Event'];
         $eventStmt = $row['Create Event'];
         $sqlMode = $row['sql_mode'];
-        $definerStr = $this->dumpSettings['skip-definer'] ? '' : '/*!50117 \2*/ ';
+        $definerStr = $this->dumpSettings['skip-definer'] ? '' : '/* !50117 \2*/ ';
 
         if ($eventStmtReplaced = preg_replace(
             '/^(CREATE)\s+(' . self::DEFINER_RE . ')?\s+(EVENT .*)$/',
-            '/*!50106 \1*/ ' . $definerStr . '/*!50106 \3 */',
+            '/* !50106 \1*/ ' . $definerStr . '/* !50106 \3 */',
             $eventStmt,
             1
         )) {
             $eventStmt = $eventStmtReplaced;
         }
 
-        $ret .= "/*!50106 SET @save_time_zone= @@TIME_ZONE */ ;" . PHP_EOL .
-            "/*!50106 DROP EVENT IF EXISTS `" . $eventName . "` */;" . PHP_EOL .
+        $ret .= "/* !50106 SET @save_time_zone= @@TIME_ZONE */ ;" . PHP_EOL .
+            "/* !50106 DROP EVENT IF EXISTS `" . $eventName . "` */;" . PHP_EOL .
             "DELIMITER ;;" . PHP_EOL .
-            "/*!50003 SET @saved_cs_client      = @@character_set_client */ ;;" . PHP_EOL .
-            "/*!50003 SET @saved_cs_results     = @@character_set_results */ ;;" . PHP_EOL .
-            "/*!50003 SET @saved_col_connection = @@collation_connection */ ;;" . PHP_EOL .
-            "/*!50003 SET character_set_client  = utf8 */ ;;" . PHP_EOL .
-            "/*!50003 SET character_set_results = utf8 */ ;;" . PHP_EOL .
-            "/*!50003 SET collation_connection  = utf8_general_ci */ ;;" . PHP_EOL .
-            "/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;;" . PHP_EOL .
-            "/*!50003 SET sql_mode              = '" . $sqlMode . "' */ ;;" . PHP_EOL .
-            "/*!50003 SET @saved_time_zone      = @@time_zone */ ;;" . PHP_EOL .
-            "/*!50003 SET time_zone             = 'SYSTEM' */ ;;" . PHP_EOL .
+            "/* !50003 SET @saved_cs_client      = @@character_set_client */ ;;" . PHP_EOL .
+            "/* !50003 SET @saved_cs_results     = @@character_set_results */ ;;" . PHP_EOL .
+            "/* !50003 SET @saved_col_connection = @@collation_connection */ ;;" . PHP_EOL .
+            "/* !50003 SET character_set_client  = utf8 */ ;;" . PHP_EOL .
+            "/* !50003 SET character_set_results = utf8 */ ;;" . PHP_EOL .
+            "/* !50003 SET collation_connection  = utf8_general_ci */ ;;" . PHP_EOL .
+            "/* !50003 SET @saved_sql_mode       = @@sql_mode */ ;;" . PHP_EOL .
+            "/* !50003 SET sql_mode              = '" . $sqlMode . "' */ ;;" . PHP_EOL .
+            "/* !50003 SET @saved_time_zone      = @@time_zone */ ;;" . PHP_EOL .
+            "/* !50003 SET time_zone             = 'SYSTEM' */ ;;" . PHP_EOL .
             $eventStmt . " ;;" . PHP_EOL .
-            "/*!50003 SET time_zone             = @saved_time_zone */ ;;" . PHP_EOL .
-            "/*!50003 SET sql_mode              = @saved_sql_mode */ ;;" . PHP_EOL .
-            "/*!50003 SET character_set_client  = @saved_cs_client */ ;;" . PHP_EOL .
-            "/*!50003 SET character_set_results = @saved_cs_results */ ;;" . PHP_EOL .
-            "/*!50003 SET collation_connection  = @saved_col_connection */ ;;" . PHP_EOL .
+            "/* !50003 SET time_zone             = @saved_time_zone */ ;;" . PHP_EOL .
+            "/* !50003 SET sql_mode              = @saved_sql_mode */ ;;" . PHP_EOL .
+            "/* !50003 SET character_set_client  = @saved_cs_client */ ;;" . PHP_EOL .
+            "/* !50003 SET character_set_results = @saved_cs_results */ ;;" . PHP_EOL .
+            "/* !50003 SET collation_connection  = @saved_col_connection */ ;;" . PHP_EOL .
             "DELIMITER ;" . PHP_EOL .
-            "/*!50106 SET TIME_ZONE= @save_time_zone */ ;" . PHP_EOL . PHP_EOL;
+            "/* !50106 SET TIME_ZONE= @save_time_zone */ ;" . PHP_EOL . PHP_EOL;
         // Commented because we are doing this in restore_parameters()
-        // "/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;" . PHP_EOL . PHP_EOL;
+        // "/* !40103 SET TIME_ZONE=@OLD_TIME_ZONE */;" . PHP_EOL . PHP_EOL;
 
         return $ret;
     }
@@ -1972,7 +1973,7 @@ class TypeAdapterMysql extends TypeAdapterFactory
     {
         $this->check_parameters(func_num_args(), $expected_num_args = 1, __METHOD__);
         $args = func_get_args();
-        return "/*!40000 ALTER TABLE `${args[0]}` DISABLE KEYS */;" .
+        return "/* !40000 ALTER TABLE `${args[0]}` DISABLE KEYS */;" .
             PHP_EOL;
     }
 
@@ -1980,7 +1981,7 @@ class TypeAdapterMysql extends TypeAdapterFactory
     {
         $this->check_parameters(func_num_args(), $expected_num_args = 1, __METHOD__);
         $args = func_get_args();
-        return "/*!40000 ALTER TABLE `${args[0]}` ENABLE KEYS */;" .
+        return "/* !40000 ALTER TABLE `${args[0]}` ENABLE KEYS */;" .
             PHP_EOL;
     }
 
@@ -1998,7 +1999,7 @@ class TypeAdapterMysql extends TypeAdapterFactory
     {
         $this->check_parameters(func_num_args(), $expected_num_args = 1, __METHOD__);
         $args = func_get_args();
-        return "/*!40000 DROP DATABASE IF EXISTS `${args[0]}`*/;" .
+        return "/* !40000 DROP DATABASE IF EXISTS `${args[0]}`*/;" .
             PHP_EOL . PHP_EOL;
     }
 
@@ -2021,7 +2022,7 @@ class TypeAdapterMysql extends TypeAdapterFactory
         $this->check_parameters(func_num_args(), $expected_num_args = 1, __METHOD__);
         $args = func_get_args();
         return "DROP TABLE IF EXISTS `${args[0]}`;" . PHP_EOL .
-            "/*!50001 DROP VIEW IF EXISTS `${args[0]}`*/;" . PHP_EOL;
+            "/* !50001 DROP VIEW IF EXISTS `${args[0]}`*/;" . PHP_EOL;
     }
 
     public function getDatabaseHeader()
@@ -2064,20 +2065,20 @@ class TypeAdapterMysql extends TypeAdapterFactory
 
     public function backup_parameters()
     {
-        $ret = "/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;" . PHP_EOL .
-            "/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;" . PHP_EOL .
-            "/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;" . PHP_EOL .
-            "/*!40101 SET NAMES " . $this->dumpSettings['default-character-set'] . " */;" . PHP_EOL;
+        $ret = "/* !40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;" . PHP_EOL .
+            "/* !40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;" . PHP_EOL .
+            "/* !40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;" . PHP_EOL .
+            "/* !40101 SET NAMES " . $this->dumpSettings['default-character-set'] . " */;" . PHP_EOL;
 
         if (false === $this->dumpSettings['skip-tz-utc']) {
-            $ret .= "/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;" . PHP_EOL .
-                "/*!40103 SET TIME_ZONE='+00:00' */;" . PHP_EOL;
+            $ret .= "/* !40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;" . PHP_EOL .
+                "/* !40103 SET TIME_ZONE='+00:00' */;" . PHP_EOL;
         }
 
-        $ret .= "/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;" . PHP_EOL .
-            "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;" . PHP_EOL .
-            "/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;" . PHP_EOL .
-            "/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;" . PHP_EOL . PHP_EOL;
+        $ret .= "/* !40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;" . PHP_EOL .
+            "/* !40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;" . PHP_EOL .
+            "/* !40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;" . PHP_EOL .
+            "/* !40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;" . PHP_EOL . PHP_EOL;
 
         return $ret;
     }
@@ -2087,16 +2088,16 @@ class TypeAdapterMysql extends TypeAdapterFactory
         $ret = "";
 
         if (false === $this->dumpSettings['skip-tz-utc']) {
-            $ret .= "/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;" . PHP_EOL;
+            $ret .= "/* !40103 SET TIME_ZONE=@OLD_TIME_ZONE */;" . PHP_EOL;
         }
 
-        $ret .= "/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;" . PHP_EOL .
-            "/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;" . PHP_EOL .
-            "/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;" . PHP_EOL .
-            "/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;" . PHP_EOL .
-            "/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;" . PHP_EOL .
-            "/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;" . PHP_EOL .
-            "/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;" . PHP_EOL . PHP_EOL;
+        $ret .= "/* !40101 SET SQL_MODE=@OLD_SQL_MODE */;" . PHP_EOL .
+            "/* !40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;" . PHP_EOL .
+            "/* !40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;" . PHP_EOL .
+            "/* !40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;" . PHP_EOL .
+            "/* !40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;" . PHP_EOL .
+            "/* !40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;" . PHP_EOL .
+            "/* !40111 SET SQL_NOTES=@OLD_SQL_NOTES */;" . PHP_EOL . PHP_EOL;
 
         return $ret;
     }

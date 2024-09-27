@@ -231,6 +231,7 @@ class SimpleBackup
 
         $error_message = '';
         $error_status = false;
+        $line_number = 0;
 
         try {
             if (!empty($config)) {
@@ -262,6 +263,7 @@ class SimpleBackup
 
             // Loop through each line
             foreach ($allLines as $line) {
+				$line_number++;
 
                 // (if it is not a comment..) Add this line to the current segment
                 if ($line != '' && strpos($line, '--') !== 0) {
@@ -283,9 +285,13 @@ class SimpleBackup
             $error_status = true;
 
             $this->response = [
-                'status' => false,
-                'message' => $e->getMessage()
+                'status' => false
+                ,'message' => $e->getMessage()
+                ,'line_number' => $line_number
+                ,'query' => $templine
+                ,'error_message' => $error_message
             ];
+			return $this;
         }
 
         $this->response['message'] = $error_message;
@@ -293,6 +299,9 @@ class SimpleBackup
         if ($error_status === false) {
             $this->response['message'] = 'Importing finished successfully';
         }
+		else{
+			$this->response['message'] = 'Importing error';
+		}
 
         return $this;
     }
